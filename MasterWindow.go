@@ -32,6 +32,8 @@ const (
 	MasterWindowFlagsTransparent
 	// Specifies whether the window will be hidden (for use with multiple windows).
 	MasterWindowFlagsHidden
+	// Specifies whether the window should skip taskbar/dock (notification-style window).
+	MasterWindowFlagsSkipTaskbar
 )
 
 // parseAndApply converts MasterWindowFlags to appropriate glfwbackend.GLFWWindowFlags.
@@ -109,6 +111,15 @@ func NewMasterWindow(title string, width, height int, flags MasterWindowFlags) *
 	}
 
 	currentBackend.CreateWindow(title, width, height)
+
+	// Apply platform-specific SkipTaskbar flag after window creation
+	if flags&MasterWindowFlagsSkipTaskbar != 0 {
+		if glfwBackend, ok := currentBackend.(*GLFWBackend); ok {
+			if windowPtr := glfwBackend.GetGLFWWindowPtr(); windowPtr != 0 {
+				applySkipTaskbar(windowPtr)
+			}
+		}
+	}
 
 	mw.SetInputHandler(newInputHandler())
 

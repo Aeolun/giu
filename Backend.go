@@ -2,6 +2,8 @@ package giu
 
 import (
 	"fmt"
+	"reflect"
+	"unsafe"
 
 	"github.com/AllenDang/cimgui-go/backend"
 	"github.com/AllenDang/cimgui-go/backend/glfwbackend"
@@ -72,4 +74,24 @@ func (b *GLFWBackend) parseFlag(m MasterWindowFlags) flagValue[glfwbackend.GLFWW
 	Assert(ok, "GLFWBackend", "parseFlag", "Unknown MasterWindowFlags")
 
 	return d
+}
+
+// GetGLFWBackend returns the underlying glfwbackend.GLFWBackend for platform-specific access.
+func (b *GLFWBackend) GetGLFWBackend() *glfwbackend.GLFWBackend {
+	return b.GLFWBackend
+}
+
+// GetGLFWWindowPtr returns the raw GLFW window pointer (C GLFWwindow*) as uintptr.
+// Uses reflection and unsafe to access the unexported window field.
+func (b *GLFWBackend) GetGLFWWindowPtr() uintptr {
+	// Use reflection to locate the unexported window field
+	val := reflect.ValueOf(b.GLFWBackend).Elem()
+	windowField := val.FieldByName("window")
+	if !windowField.IsValid() {
+		return 0
+	}
+
+	// Use unsafe to read the uintptr value from the unexported field
+	windowPtr := reflect.NewAt(windowField.Type(), unsafe.Pointer(windowField.UnsafeAddr())).Elem().Interface().(uintptr)
+	return windowPtr
 }
